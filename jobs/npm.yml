@@ -1,0 +1,40 @@
+# variables:
+#   NODEJS_IMAGE: nodejs:18.18.2-bookworm
+  
+.script__npm_clean_install:
+  if [ ! -e node_modules ] ; then npm ci ; fi
+  
+.npm_cache:
+  cache:
+  - &npm_packages
+    key: npm-packages
+    paths:
+      - .cache
+    unprotect: true
+  - &npm_node_modules
+    key:
+      prefix: npm-node-modules
+      files:
+        - package-lock.json
+    paths:
+      - node_modules
+ 
+ 
+.job__npm_build:
+  image:
+    name: $NODEJS_IMAGE
+    entrypoint: [""]
+  cache:
+    - <<: *npm_packages
+      policy: pull
+    - <<: *npm_node_modules
+      policy: pull
+    - key: npm-cache
+      paths:
+        - .npm/cache
+  script:
+    - !reference [.script__npm_clean_install]
+    - npm run config && react-scripts build
+    - mv .npm/standalone dist
+    - mv public dist/public
+    - mv .npm/static dist/.npm/static
